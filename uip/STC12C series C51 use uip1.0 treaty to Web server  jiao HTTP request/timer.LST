@@ -1,0 +1,154 @@
+C51 COMPILER V8.12   TIMER                                                                 04/21/2011 21:03:36 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE TIMER
+OBJECT MODULE PLACED IN .\release\timer.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE timer.c LARGE BROWSE DEBUG OBJECTEXTEND OBJECT(.\release\timer.obj)
+
+line level    source
+
+   1          /**
+   2           * \addtogroup timer
+   3           * @{
+   4           */
+   5          
+   6          /**
+   7           * \file
+   8           * Timer library implementation.
+   9           * \author
+  10           * Adam Dunkels <adam@sics.se>
+  11           */
+  12          
+  13          /*
+  14           * Copyright (c) 2004, Swedish Institute of Computer Science.
+  15           * All rights reserved.
+  16           *
+  17           * Redistribution and use in source and binary forms, with or without
+  18           * modification, are permitted provided that the following conditions
+  19           * are met:
+  20           * 1. Redistributions of source code must retain the above copyright
+  21           *    notice, this list of conditions and the following disclaimer.
+  22           * 2. Redistributions in binary form must reproduce the above copyright
+  23           *    notice, this list of conditions and the following disclaimer in the
+  24           *    documentation and/or other materials provided with the distribution.
+  25           * 3. Neither the name of the Institute nor the names of its contributors
+  26           *    may be used to endorse or promote products derived from this software
+  27           *    without specific prior written permission.
+  28           *
+  29           * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+  30           * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  31           * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  32           * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+  33           * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  34           * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+  35           * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+  36           * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+  37           * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+  38           * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  39           * SUCH DAMAGE.
+  40           *
+  41           * This file is part of the uIP TCP/IP stack
+  42           *
+  43           * Author: Adam Dunkels <adam@sics.se>
+  44           *
+  45           * $Id: timer.c,v 1.2 2006/06/12 08:00:30 adam Exp $
+  46           */
+  47          
+  48          #include "clock.h"
+  49          #include "timer.h"
+  50          
+  51          /*---------------------------------------------------------------------------*/
+  52          /**
+  53           * Set a timer.
+  54           *
+  55           * This function is used to set a timer for a time sometime in the
+C51 COMPILER V8.12   TIMER                                                                 04/21/2011 21:03:36 PAGE 2   
+
+  56           * future. The function timer_expired() will evaluate to true after
+  57           * the timer has expired.
+  58           *
+  59           * \param t A pointer to the timer
+  60           * \param interval The interval before the timer expires.
+  61           *
+  62           */
+  63          void
+  64          timer_set(struct timer *t, clock_time_t interval)
+  65          {
+  66   1        t->interval = interval;
+  67   1        t->start = clock_time();
+  68   1      }
+  69          /*---------------------------------------------------------------------------*/
+  70          /**
+  71           * Reset the timer with the same interval.
+  72           *
+  73           * This function resets the timer with the same interval that was
+  74           * given to the timer_set() function. The start point of the interval
+  75           * is the exact time that the timer last expired. Therefore, this
+  76           * function will cause the timer to be stable over time, unlike the
+  77           * timer_rester() function.
+  78           *
+  79           * \param t A pointer to the timer.
+  80           *
+  81           * \sa timer_restart()
+  82           */
+  83          void
+  84          timer_reset(struct timer *t)
+  85          {
+  86   1        t->start += t->interval;
+  87   1      }
+  88          /*---------------------------------------------------------------------------*/
+  89          /**
+  90           * Restart the timer from the current point in time
+  91           *
+  92           * This function restarts a timer with the same interval that was
+  93           * given to the timer_set() function. The timer will start at the
+  94           * current time.
+  95           *
+  96           * \note A periodic timer will drift if this function is used to reset
+  97           * it. For preioric timers, use the timer_reset() function instead.
+  98           *
+  99           * \param t A pointer to the timer.
+ 100           *
+ 101           * \sa timer_reset()
+ 102           */
+ 103          void
+ 104          timer_restart(struct timer *t)
+ 105          {
+ 106   1        t->start = clock_time();
+ 107   1      }
+ 108          /*---------------------------------------------------------------------------*/
+ 109          /**
+ 110           * Check if a timer has expired.
+ 111           *
+ 112           * This function tests if a timer has expired and returns true or
+ 113           * false depending on its status.
+ 114           *
+ 115           * \param t A pointer to the timer
+ 116           *
+ 117           * \return Non-zero if the timer has expired, zero otherwise.
+C51 COMPILER V8.12   TIMER                                                                 04/21/2011 21:03:36 PAGE 3   
+
+ 118           *
+ 119           */
+ 120          int
+ 121          timer_expired(struct timer *t)
+ 122          {
+ 123   1        return (clock_time_t)(clock_time() - t->start) >= (clock_time_t)t->interval;
+ 124   1      }
+ 125          /*---------------------------------------------------------------------------*/
+ 126          
+ 127          /** @} */
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    154    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

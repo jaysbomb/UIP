@@ -1,0 +1,96 @@
+C51 COMPILER V8.12   APP_SERVER                                                            04/21/2011 21:03:37 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE APP_SERVER
+OBJECT MODULE PLACED IN .\release\app_server.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE app_server.c LARGE BROWSE DEBUG OBJECTEXTEND OBJECT(.\release\app_server.ob
+                    -j)
+
+line level    source
+
+   1          #include "uip.h"
+   2          #include "app_server.h"
+   3          #include "spi.h"
+   4          #include <string.h>
+   5          #include <reg52.h>
+   6          
+   7          code char ascii_code[10]={'1','2','3','4','5','6','7','8','9'};
+   8          //char ascii_num[6] = {0,0,0,0,0,0};
+   9          
+  10          void delay(uint x)  //延时子程序
+  11          {
+  12   1              uint i,j;
+  13   1              for (i=0; i<x; i++)
+  14   1                      for(j=0;j<=1105;j++);
+  15   1      }
+  16          
+  17          void blink_led()                                //闪光灯，亮10ms
+  18          {
+  19   1              led_work = 0;
+  20   1              delay(10);
+  21   1              led_work = 1;
+  22   1              delay(10);
+  23   1      }
+  24          
+  25          void app_job(void) 
+  26          {
+  27   1              //blink_led();
+  28   1              //uip_send("GET /uip_server/put_data.php?mod=putdata&value=23.5695 HTTP/1.0\r\n\r\n",67);
+  29   1              //uip_send("OK",2);     
+  30   1      }
+  31          
+  32          void app_server_init(void) 
+  33          {
+  34   1              struct uip_conn *conn;
+  35   1              static uip_ipaddr_t addr;
+  36   1              uip_ipaddr_t *ipaddr;
+  37   1              ipaddr = &addr;         //避免空指针和出错，否则数据包发送不出来
+*** WARNING C182 IN LINE 37 OF APP_SERVER.C: pointer to different objects
+  38   1      
+  39   1              uip_ipaddr(ipaddr, 192, 168, 30, 129);          //服务器IP地址
+  40   1              conn = uip_connect(ipaddr, HTONS(8080));        //服务器端口
+  41   1              if(conn == NULL){
+  42   2              return;
+  43   2              }else{
+  44   2                      blink_led();
+  45   2                      delay(500);             //延时，以保证网络连接的正确性
+  46   2                      blink_led();    
+  47   2              }
+  48   1              //blink_led();  //初始化，闪灯  
+  49   1              led_work = 1;   //初始化，将灯熄灭      
+  50   1      }
+  51          
+  52          void tcp_server_appcall(void) 
+  53          {
+C51 COMPILER V8.12   APP_SERVER                                                            04/21/2011 21:03:37 PAGE 2   
+
+  54   1              /*
+  55   1              if(uip_connected()){
+  56   1                      blink_led();
+  57   1                      uip_send("OK\n",3);     
+  58   1              }
+  59   1      
+  60   1              if(uip_newdata() || uip_rexmit()){
+  61   1              
+  62   1                      uip_send("ok\n", 3);
+  63   1              }
+  64   1              */
+  65   1              //uip_send("OK\n",3);
+  66   1              uip_send("GET /uip_server/put_data.php?mod=putdata&value=23.5695 HTTP/1.0\r\n\r\n",67);
+  67   1              delay(100);
+  68   1      }
+  69          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    140    ----
+   CONSTANT SIZE    =     78    ----
+   XDATA SIZE       =      4       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

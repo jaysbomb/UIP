@@ -1,0 +1,185 @@
+C51 COMPILER V8.12   MAIN                                                                  04/21/2011 21:03:36 PAGE 1   
+
+
+C51 COMPILER V8.12, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\release\main.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c LARGE BROWSE DEBUG OBJECTEXTEND OBJECT(.\release\main.obj)
+
+line level    source
+
+   1          /*
+   2           * Copyright (c) 2001, Adam Dunkels.
+   3           * All rights reserved.
+   4           *
+   5           * Redistribution and use in source and binary forms, with or without
+   6           * modification, are permitted provided that the following conditions
+   7           * are met:
+   8           * 1. Redistributions of source code must retain the above copyright
+   9           *    notice, this list of conditions and the following disclaimer.
+  10           * 2. Redistributions in binary form must reproduce the above copyright
+  11           *    notice, this list of conditions and the following disclaimer in the
+  12           *    documentation and/or other materials provided with the distribution.
+  13           * 3. All advertising materials mentioning features or use of this software
+  14           *    must display the following acknowledgement:
+  15           *      This product includes software developed by Adam Dunkels.
+  16           * 4. The name of the author may not be used to endorse or promote
+  17           *    products derived from this software without specific prior
+  18           *    written permission.
+  19           *
+  20           * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+  21           * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  22           * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23           * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+  24           * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  25           * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+  26           * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27           * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+  28           * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  29           * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  30           * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  31           *
+  32           * This file is part of the uIP TCP/IP stack.
+  33           *
+  34           * $Id: main.c,v 1.16 2006/06/11 21:55:03 adam Exp $
+  35           *
+  36           */
+  37          
+  38          
+  39          #include "uip.h"
+  40          #include "uip_arp.h"
+  41          #include "enc28j60.h"
+  42          #include "timer.h"
+  43          
+  44          #define BUF ((struct uip_eth_hdr *)&uip_buf[0])
+  45          
+  46          #ifndef NULL
+  47          #define NULL (void *)0
+  48          #endif /* NULL */
+  49          
+  50          /*用来做TCP连接计时和ARP更新使用*******/
+  51          clock_time_t tick_cnt;
+  52          uint clock_j = 0;
+  53          uint app_job_t = 0;
+  54          
+  55          /*时间戳*/
+C51 COMPILER V8.12   MAIN                                                                  04/21/2011 21:03:36 PAGE 2   
+
+  56          clock_time_t clock_time(void)
+  57          {
+  58   1              return tick_cnt;
+  59   1      }
+  60          
+  61          /*---------------------------------------------------------------------------*/
+  62          int
+  63          main(void)
+  64          {
+  65   1        int i;
+  66   1        struct timer periodic_timer, arp_timer;
+  67   1      
+  68   1        timer_set(&periodic_timer, CLOCK_SECOND / 2);
+  69   1        timer_set(&arp_timer, CLOCK_SECOND * 10);
+  70   1        
+  71   1        tapdev_init();
+  72   1        uip_init();
+  73   1        uip_arp_init();               //初始化arp协议
+  74   1        app_server_init();
+  75   1      
+  76   1        while(1)
+  77   1        {
+  78   2                      uip_len = tapdev_read();        //从网络设置读取信息
+  79   2                      if(uip_len > 0)
+  80   2                      {
+  81   3                              if(BUF->type == htons(UIP_ETHTYPE_IP)) 
+  82   3                              {
+  83   4                                      uip_arp_ipin();
+  84   4                                      uip_input();
+  85   4                                      /* If the above function invocation resulted in data that
+  86   4                                         should be sent out on the network, the global variable
+  87   4                                         uip_len is set to a value > 0. */
+  88   4                                      if(uip_len > 0) 
+  89   4                                      {
+  90   5                                              uip_arp_out();
+  91   5                                              tapdev_send();
+  92   5                                      }
+  93   4                              } 
+  94   3                              else if(BUF->type == htons(UIP_ETHTYPE_ARP)) 
+  95   3                              {
+  96   4                                      uip_arp_arpin();
+  97   4                                      /* If the above function invocation resulted in data that
+  98   4                                      should be sent out on the network, the global variable
+  99   4                                      uip_len is set to a value > 0. */
+ 100   4                                      if(uip_len > 0) 
+ 101   4                                      {
+ 102   5                                               tapdev_send();
+ 103   5                                      }
+ 104   4                              }
+ 105   3                      }
+ 106   2                      else if(timer_expired(&periodic_timer)) 
+ 107   2                      {
+ 108   3                              timer_reset(&periodic_timer);
+ 109   3                              for(i = 0; i < UIP_CONNS; i++) 
+ 110   3                              {
+ 111   4                                      uip_periodic(i);
+ 112   4                                      /* If the above function invocation resulted in data that
+ 113   4                                      should be sent out on the network, the global variable
+ 114   4                                      uip_len is set to a value > 0. */
+ 115   4                                      if(uip_len > 0)
+ 116   4                                      {
+ 117   5                                              uip_arp_out();
+C51 COMPILER V8.12   MAIN                                                                  04/21/2011 21:03:36 PAGE 3   
+
+ 118   5                                              tapdev_send();
+ 119   5                                      }
+ 120   4                              }
+ 121   3      
+ 122   3                              #if UIP_UDP
+                                      for(i = 0; i < UIP_UDP_CONNS; i++) 
+                                      {
+                                              uip_udp_periodic(i);
+                                              // If the above function invocation resulted in data that
+                                              //should be sent out on the network, the global variable
+                                              //uip_len is set to a value > 0.
+                                              if(uip_len > 0) 
+                                              {
+                                                      uip_arp_out();
+                                                      tapdev_send();
+                                              }
+                                      }
+                                      #endif
+ 136   3      
+ 137   3                              /* Call the ARP timer function every 10 seconds. */
+ 138   3                              if(timer_expired(&arp_timer)) 
+ 139   3                              {
+ 140   4                                      timer_reset(&arp_timer);
+ 141   4                                      uip_arp_timer();
+ 142   4                              }
+ 143   3                      }
+ 144   2           /*张官海添加，用于作定期的ARP更新*/
+ 145   2               if( ++clock_j == 1500){
+ 146   3                      //大约这里为1000ms，当值为1000的时候
+ 147   3                      tick_cnt++;             //每隔一段时间加1
+ 148   3                      clock_j = 0;    //将计数清零
+ 149   3                      //blink_led();  //新光灯，以判断是否工作
+ 150   3               }
+ 151   2      
+ 152   2               if( ++app_job_t == 1500){
+ 153   3                      //定期的执行一些任务，最大为65500 毫秒 ，当然这个时钟不准确
+ 154   3                      app_job();
+ 155   3                      app_job_t = 0;  //将计数清零
+ 156   3               }
+ 157   2        }
+ 158   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    383    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      6      10
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
